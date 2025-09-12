@@ -3,3 +3,5 @@
 
 # Node.js dependencies
 node_modules/
+
+samconfig.toml
