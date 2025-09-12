@@ -1,0 +1,11 @@
+{
+  "name": "sqs-processor",
+  "version": "1.0.0",
+  "description": "Processes SQS messages and calls Gemini.",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.583.0",
+    "@google/genai": "^1.19.0",
+    "@aws-sdk/client-dynamodb": "^3.583.0"
+  }
+}

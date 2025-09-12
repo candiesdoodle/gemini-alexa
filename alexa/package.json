@@ -1,0 +1,10 @@
+{
+  "name": "alexa-handler",
+  "version": "1.0.0",
+  "description": "Handles Alexa requests and polls for responses.",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.583.0",
+    "@aws-sdk/client-dynamodb": "^3.583.0"
+  }
+}

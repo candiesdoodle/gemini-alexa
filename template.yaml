@@ -1,0 +1,140 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: AlexaSkill with ChatGPT (Node.js with DynamoDB)
+
+Globals:
+  Function:
+    Tags:
+      Project: Alexa-ChatGPT
+    Timeout: 300
+    Environment:
+      Variables:
+        REQUESTS_QUEUE_URI: !Ref RequestsQueue
+        GEMINI_API_KEY: !Ref GeminiApiKey
+        S3_BUCKET: !Ref Bucket
+        DYNAMODB_TABLE: !Ref ResponsesTable
+    Tracing: Active
+
+Parameters:
+  GeminiApiKey:
+    Type: String
+    Description: Your Google AI Studio API Key.
+
+  Runtime:
+    Type: String
+    Default: nodejs20.x
+
+  Architecture:
+    Type: String
+    Default: "arm64"
+
+  Handler:
+    Type: String
+    Default: index.handler
+
+Resources:
+  ResponsesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "requestId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "requestId"
+          KeyType: "HASH"
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: "ttl"
+        Enabled: true
+
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-contents
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+            AllowedOrigins:
+              - "http://ask-ifr-download.s3.amazonaws.com"
+              - "https://ask-ifr-download.s3.amazonaws.com"
+  RequestsQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-Requests
+      RedrivePolicy:
+        maxReceiveCount: 5
+        deadLetterTargetArn: !GetAtt RequestsDLQ.Arn
+      VisibilityTimeout: 301
+
+  RequestsDLQ:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-Requests-DLQ
+
+  ChatGPTFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: !Ref Runtime
+      Handler: !Ref Handler
+      Architectures:
+        - !Ref Architecture
+      FunctionName: chatGPT-nodejs
+      CodeUri: ./alexa
+      Events:
+        AlexaSkillEvent:
+          Type: AlexaSkill
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBReadPolicy:
+            TableName: !Ref ResponsesTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt RequestsQueue.QueueName
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:PurgeQueue
+              Resource: !GetAtt RequestsQueue.Arn
+
+  ChatGPTRequests:
+    Type: AWS::Serverless::Function
+    Properties:
+      ReservedConcurrentExecutions: 1
+      Runtime: !Ref Runtime
+      Handler: !Ref Handler
+      Architectures:
+        - !Ref Architecture
+      FunctionName: chatGPTRequests-nodejs
+      CodeUri: ./sqs
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt RequestsQueue.Arn
+            BatchSize: 1
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResponsesTable
+        - S3CrudPolicy:
+            BucketName: !Ref Bucket
+
+Outputs:
+  ChatGPTLambdaArn:
+    Description: "chatGPT alexa skill lambda ARN"
+    Value: !GetAtt ChatGPTFunction.Arn
+
+  ChatGPTRequestsArn:
+    Description: "chatGPT requests handling lambda ARN"
+    Value: !GetAtt ChatGPTRequests.Arn
+
+  RequestsQueue:
+    Description: "chatGPT prompt requests queue"
+    Value: !GetAtt RequestsQueue.Arn
+
+  RequestsDLQ:
+    Description: "chatGPT prompt requests dead letter queue"
+    Value: !GetAtt RequestsDLQ.Arn

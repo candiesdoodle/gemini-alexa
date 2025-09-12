@@ -1,0 +1,45 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "google gemini",
+            "intents": [
+                {
+                    "name": "CatchAll",
+                    "slots": [
+                        {
+                            "name": "text",
+                            "type": "CatchAll"
+                        }
+                    ],
+                    "samples": [
+                        "{text}"
+                    ]
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                }
+            ],
+            "types": [
+                {
+                    "name": "CatchAll",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "This is a placeholder. Do not change this or the name of the CatchAll Intent."
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
