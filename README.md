@@ -57,6 +57,7 @@ README.md          # This file
 - [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html) installed
 - [Node.js](https://nodejs.org/) (v20.x or later)
 - A **Google AI Studio API Key** for the Gemini API. You can get one from [Google AI Studio](https://aistudio.google.com/).
+- **AWS Permissions**: Ensure the AWS user or role configured for your AWS CLI has sufficient permissions to create and manage the resources defined in `template.yaml`. This includes permissions for AWS Lambda, DynamoDB, SQS, and AWS Systems Manager Parameter Store.
 
 ## Installation and Deployment
 
@@ -70,8 +71,19 @@ README.md          # This file
     ```sh
     sam deploy --guided
     ```
-5.  **Enter Parameters**: During the guided deployment, SAM will prompt you for parameters. For `GeminiApiKey`, paste your key from Google AI Studio. Accept the defaults for the other parameters.
-6.  **Configure Alexa Endpoint**: After deployment is complete, the SAM CLI will output the ARN of the `ChatGPTFunction`. Copy this ARN.
-7.  Go to the [Alexa Developer Console](https://developer.amazon.com/alexa/console/ask) and create a new skill.
-8.  In your skill's configuration, navigate to the **Endpoint** section and paste the Lambda ARN you copied.
-9.  **Define the Interaction Model**: Navigate to the **JSON Editor** section (under Interaction Model). Open the `skill.json` file from this project, copy its entire contents, and paste it into the editor. Save the model.
+5.  **Store Gemini API Key in AWS Systems Manager Parameter Store**:
+    Before deploying, you need to securely store your Google AI Studio API Key in AWS SSM Parameter Store. Replace `YOUR_NEW_API_KEY` with your actual key:
+    ```sh
+    aws ssm put-parameter \
+        --name "/alexa-gemini/gemini-api-key" \
+        --value "YOUR_NEW_API_KEY" \
+        --type "SecureString"
+    ```
+6.  **Deploy to AWS**: Deploy the application using the guided deployment process. SAM will no longer prompt you for the `GeminiApiKey`.
+    ```sh
+    sam deploy --guided
+    ```
+7.  **Configure Alexa Endpoint**: After deployment is complete, the SAM CLI will output the ARN of the `ChatGPTFunction`. Copy this ARN.
+8. Go to the [Alexa Developer Console](https://developer.amazon.com/alexa/console/ask) and create a new skill.
+9. In your skill's configuration, navigate to the **Endpoint** section and paste the Lambda ARN you copied.
+10. **Define the Interaction Model**: Navigate to the **JSON Editor** section (under Interaction Model). Open the `skill.json` file from this project, copy its entire contents, and paste it into the editor. Save the model.

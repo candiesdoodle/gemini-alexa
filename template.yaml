@@ -10,15 +10,11 @@ Globals:
     Environment:
       Variables:
         REQUESTS_QUEUE_URI: !Ref RequestsQueue
-        GEMINI_API_KEY: !Ref GeminiApiKey
-        S3_BUCKET: !Ref Bucket
         DYNAMODB_TABLE: !Ref ResponsesTable
     Tracing: Active
 
 Parameters:
-  GeminiApiKey:
-    Type: String
-    Description: Your Google AI Studio API Key.
+  
 
   Runtime:
     Type: String
@@ -47,19 +43,7 @@ Resources:
         AttributeName: "ttl"
         Enabled: true
 
-  Bucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub ${AWS::StackName}-contents
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - "*"
-            AllowedMethods:
-              - GET
-            AllowedOrigins:
-              - "http://ask-ifr-download.s3.amazonaws.com"
-              - "https://ask-ifr-download.s3.amazonaws.com"
+  
   RequestsQueue:
     Type: 'AWS::SQS::Queue'
     Properties:
@@ -73,6 +57,8 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub ${AWS::StackName}-Requests-DLQ
+
+  
 
   ChatGPTFunction:
     Type: AWS::Serverless::Function
@@ -109,6 +95,9 @@ Resources:
         - !Ref Architecture
       FunctionName: chatGPTRequests-nodejs
       CodeUri: ./sqs
+      Environment:
+        Variables:
+          GEMINI_API_KEY: /alexa-gemini/gemini-api-key
       Events:
         MySQSEvent:
           Type: SQS
@@ -119,8 +108,12 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - DynamoDBCrudPolicy:
             TableName: !Ref ResponsesTable
-        - S3CrudPolicy:
-            BucketName: !Ref Bucket
+        
+        - Statement:
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/alexa-gemini/gemini-api-key"
 
 Outputs:
   ChatGPTLambdaArn:
