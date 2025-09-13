@@ -9,6 +9,10 @@ This project is an advanced Alexa skill that uses Google's Gemini AI for intelli
 - **Asynchronous Architecture**: An SQS queue and a worker Lambda prevent the skill from timing out while waiting for long-running AI responses.
 - **Built-in Commands**: Includes logic for handling commands like "help" and retrieving the last response if the user had to wait.
 
+## Credits
+
+This project was inspired by the work of [jackmcguire1/alexa-chatgpt](https://github.com/jackmcguire1/alexa-chatgpt), especially for the use of queues.
+
 ## How to Use
 
 You can start the skill by saying, "Alexa, open google gemini." The invocation name ("google gemini") is defined in `skill.json` and can be customized in the Alexa Developer Console. 
